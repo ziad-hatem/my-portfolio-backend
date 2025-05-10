@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId], map: "Account_userId_fkey")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Session_userId_fkey")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model User {
+  id             String           @id @default(cuid())
+  name           String?
+  email          String?          @unique
+  emailVerified  DateTime?
+  password       String?
+  image          String?
+  position       String?
+  phoneNumber    String?
+  linkedinUrl    String?
+  cvUrl          String?
+  location       String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  role           Role             @default(USER)
+  aboutMe        AboutMe?
+  accounts       Account[]
+  contact        Contact[]
+  education      Education[]
+  mySkills       MySkills[]
+  projects       Projects[]
+  sessions       Session[]
+  whatIDo        WhatIDo[]
+  workExperience WorkExperience[]
+}
+
+model AboutMe {
+  id                 Int      @id @default(autoincrement())
+  userId             String   @unique
+  description        String   @db.Text
+  yearsOfExperience  Int      @default(0)
+  trainingCourses    Int      @default(0)
+  awardsCertificates Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WhatIDo {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  title     String
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "WhatIDo_userId_fkey")
+}
+
+model Education {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  title       String
+  description String   @db.Text
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Education_userId_fkey")
+}
+
+model WorkExperience {
+  id          Int       @id @default(autoincrement())
+  userId      String
+  title       String
+  description String    @db.Text
+  startDate   DateTime
+  /// make it optional so you can store "present"
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "WorkExperience_userId_fkey")
+}
+
+model Projects {
+  id           String       @id @default(cuid())
+  userId       String
+  title        String
+  youtubeUrl   String?
+  imageUrl     String
+  projectUrl   String
+  linkedinUrl  String?
+  githubUrl    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  technologies Technology[] @relation("ProjectToTechnology")
+
+  @@index([userId], map: "Projects_userId_fkey")
+}
+
+model Technology {
+  id        String     @id @default(cuid())
+  name      String
+  icon      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  projects  Projects[] @relation("ProjectToTechnology")
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  email       String
+  phoneNumber String
+  message     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Contact_userId_fkey")
+}
+
+model MySkills {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  icon      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "MySkills_userId_fkey")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
